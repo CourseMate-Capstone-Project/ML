@@ -10,23 +10,15 @@
             background-color: #f4f4f4;
             margin: 0;
             padding: 0;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh; /* Menjaga footer tetap di bawah */
-            justify-content: flex-start; /* Menjaga konten tetap di atas */
         }
 
         .container {
-            min-width: 800px;
+            max-width: 800px;
             margin: 50px auto;
             background-color: #fff;
             padding: 25px;
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            flex: 1;
-            display: flex;
-            flex-direction: column; /* Menyusun elemen dalam container secara vertikal */
-            justify-content: flex-start;
         }
 
         h1 {
@@ -44,34 +36,35 @@
             color: #555;
         }
 
-        input, select {
+        select, input {
             width: 100%;
-            padding: 8px;
-            margin-top: 5px;
+            padding: 10px;
             border: 1px solid #ccc;
             border-radius: 4px;
             font-size: 16px;
+            margin-top: 5px;
         }
 
         button {
+            width: 100%;
             background-color: #4CAF50;
-            color: white;
-            padding: 10px 20px;
+            color: #fff;
             border: none;
+            padding: 10px 15px;
+            font-size: 16px;
             border-radius: 4px;
             cursor: pointer;
-            width: 100%;
-            font-size: 16px;
         }
 
         button:hover {
             background-color: #45a049;
         }
 
-        .error {
-            color: red;
-            font-size: 14px;
+        .error, .success {
+            margin-top: 15px;
             text-align: center;
+            font-size: 14px;
+            color: red;
         }
 
         .recommendations {
@@ -80,7 +73,7 @@
 
         .course {
             background-color: #f9f9f9;
-            padding: 20px;
+            padding: 15px;
             margin-bottom: 10px;
             border-radius: 4px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -89,7 +82,6 @@
         .course h3 {
             margin: 0;
             font-size: 18px;
-            color: #333;
         }
 
         .course p {
@@ -100,79 +92,29 @@
         .course a {
             display: inline-block;
             margin-top: 10px;
-            padding: 8px 12px;
-            background-color: #007BFF;
-            color: white;
             text-decoration: none;
+            color: #fff;
+            background-color: #007BFF;
+            padding: 8px 12px;
             border-radius: 4px;
         }
 
         .course a:hover {
             background-color: #0056b3;
         }
-
-        footer {
-            background-color: #333;
-            color: white;
-            text-align: center;
-            padding: 10px 0;
-            width: 100%;
-            position: relative;
-            bottom: 0;
-        }
-
-        footer a {
-            color: #ccc;
-            text-decoration: none;
-        }
-
-        footer a:hover {
-            text-decoration: underline;
-        }
-
-        .category-result {
-            background-color: #e2e2e2;
-            padding: 12px 20px;
-            margin-bottom: 20px;
-            border-radius: 6px;
-            font-size: 18px;
-            font-weight: bold;
-            color: #333;
-            text-align: center;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        .recommended-title {
-            margin-top: 20px;
-            font-size: 20px;
-            font-weight: bold;
-            color: #333;
-            text-align: center;
-        }
-
-        .recommended-courses {
-            margin-top: 20px;
-        }
-
-        .recommended-courses .course {
-            margin-bottom: 15px;
-        }
-    </style>          
+    </style>
 </head>
 <body>
     <div class="container">
         <h1>CourseMate - Course Recommendation</h1>
-
-        <form method="POST">
+        <form id="recommendationForm">
             <div class="form-group">
-                <label for="subcategory">Interest:</label>
+                <label for="subcategory">Sub-Category:</label>
                 <select id="subcategory" name="subcategory" required>
-                    <option value="" disabled selected>Select your interest</option>
+                    <option value="" disabled selected>Select your sub-category</option>
                     <option value="Algorithms">Algorithms</option>
                     <option value="Animal Health">Animal Health</option>
                     <option value="Basic Science">Basic Science</option>
-                    <option value="Biology">Biology</option>
                     <option value="Business Essentials">Business Essentials</option>
                     <option value="Business Strategy">Business Strategy</option>
                     <option value="Chemistry">Chemistry</option>
@@ -183,7 +125,6 @@
                     <option value="Design and Product">Design and Product</option>
                     <option value="Electrical Engineering">Electrical Engineering</option>
                     <option value="Entrepreneurship">Entrepreneurship</option>
-                    <option value="Environmental Science and Sustainability">Environmental Science and Sustainability</option>
                     <option value="Finance">Finance</option>
                     <option value="Health Informatics">Health Informatics</option>
                     <option value="Healthcare Management">Healthcare Management</option>
@@ -194,23 +135,16 @@
                     <option value="Mechanical Engineering">Mechanical Engineering</option>
                     <option value="Mobile and Web Development">Mobile and Web Development</option>
                     <option value="Music and Art">Music and Art</option>
-                    <option value="Networking">Networking</option>
                     <option value="Nutrition">Nutrition</option>
                     <option value="Patient Care">Patient Care</option>
                     <option value="Personal Development">Personal Development</option>
-                    <option value="Philosophy">Philosophy</option>
-                    <option value="Physics and Astronomy">Physics and Astronomy</option>
                     <option value="Probability and Statistics">Probability and Statistics</option>
                     <option value="Psychology">Psychology</option>
                     <option value="Public Health">Public Health</option>
                     <option value="Research">Research</option>
-                    <option value="Research Methods">Research Methods</option>
-                    <option value="Security">Security</option>
                     <option value="Software Development">Software Development</option>
-                    <option value="Support and Operations">Support and Operations</option>
                 </select>
             </div>
-
             <div class="form-group">
                 <label for="course_type">Course Type:</label>
                 <select id="course_type" name="course_type" required>
@@ -221,66 +155,65 @@
                     <option value="Specialization">Specialization</option>
                 </select>
             </div>
-
             <div class="form-group">
                 <label for="duration">Duration (in weeks):</label>
                 <select id="duration" name="duration" required>
                     <option value="" disabled selected>Select duration</option>
                     <option value="1">1</option>
                     <option value="2">2</option>
-                    <option value="3">3</option>
                     <option value="4">4</option>
-                    <option value="5">5</option>
-                    <option value="6">6</option>
-                    <option value="7">7</option>
                     <option value="8">8</option>
-                    <option value="9">9</option>
-                    <option value="10">10</option>
-                    <option value="11">11</option>
                     <option value="12">12</option>
-                    <option value="13">13</option>
-                    <option value="14">14</option>
-                    <option value="15">15</option>
                     <option value="16">16</option>
-                    <option value="17">17</option>
-                    <option value="18">18</option>
-                    <option value="19">19</option>
                     <option value="20">20</option>
                 </select>
             </div>
-
             <button type="submit">Get Recommendations</button>
         </form>
 
-        {% if error %}
-            <div class="error">{{ error }}</div>
-        {% endif %}
-
-        {% if predicted_category %}
-            <div class="recommended-title">
-                <div class="category-result">
-                    <h3>Predicted Category: {{ predicted_category }}</h3>
-                </div>
-                <h2>Recommended Courses for {{ predicted_category }}</h2>
-            </div>
-        {% endif %}
-
-        {% if recommended_courses %}
-            <div class="recommendations">
-                {% for course in recommended_courses %}
-                    <div class="course">
-                        <h3>{{ course['title'] }}</h3>
-                        <p>{{ course['short_intro'] }}</p>
-                        <a href="{{ course['url'] }}" target="_blank">Enroll Now</a>
-                    </div>
-                {% endfor %}
-            </div>
-        {% endif %}
+        <div id="output" class="recommendations"></div>
     </div>
 
-    <footer>
-        <p>&copy; 2024 CourseMate. All rights reserved.</p>
-        <p><a href="#">Privacy Policy</a> | <a href="#">Terms of Service</a></p>
-    </footer>
+    <script>
+        document.getElementById("recommendationForm").addEventListener("submit", async function(event) {
+            event.preventDefault();
+
+            const subcategory = document.getElementById("subcategory").value;
+            const courseType = document.getElementById("course_type").value;
+            const duration = document.getElementById("duration").value;
+
+            try {
+                const response = await fetch("https://course-recommendation-api-866939629489.asia-southeast2.run.app/api/recommend", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ subcategory, course_type: courseType, duration })
+                });
+
+                const data = await response.json();
+
+                const outputDiv = document.getElementById("output");
+                outputDiv.innerHTML = "";
+
+                if (response.ok) {
+                    const { predicted_category, recommended_courses } = data;
+                    outputDiv.innerHTML = `<h2>Predicted Category: ${predicted_category}</h2>`;
+                    recommended_courses.forEach(course => {
+                        const courseDiv = document.createElement("div");
+                        courseDiv.className = "course";
+                        courseDiv.innerHTML = `
+                            <h3>${course.title}</h3>
+                            <p>${course.short_intro}</p>
+                            <a href="${course.url}" target="_blank">Enroll Now</a>
+                        `;
+                        outputDiv.appendChild(courseDiv);
+                    });
+                } else {
+                    outputDiv.innerHTML = `<div class="error">${data.error}</div>`;
+                }
+            } catch (error) {
+                document.getElementById("output").innerHTML = `<div class="error">An error occurred. Please try again later.</div>`;
+            }
+        });
+    </script>
 </body>
 </html>
