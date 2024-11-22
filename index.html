@@ -200,17 +200,22 @@
 
                 if (response.ok) {
                     const { predicted_category, recommended_courses } = data;
-                    outputDiv.innerHTML = `<h2>Predicted Category: ${predicted_category}</h2>`;
-                    recommended_courses.forEach(course => {
-                        const courseDiv = document.createElement("div");
-                        courseDiv.className = "course";
-                        courseDiv.innerHTML = `
-                            <h3>${course.title}</h3>
-                            <p>${course.short_intro}</p>
-                            <a href="${course.url}" target="_blank">Enroll Now</a>
-                        `;
-                        outputDiv.appendChild(courseDiv);
-                    });
+                    outputDiv.innerHTML = `<h2>Courses for "${predicted_category}"</h2>`;  <!-- Updated Message -->
+                    
+                    if (recommended_courses.length > 0) {
+                        recommended_courses.forEach(course => {
+                            const courseDiv = document.createElement("div");
+                            courseDiv.className = "course";
+                            courseDiv.innerHTML = `
+                                <h3>${course.title}</h3>
+                                <p>${course.short_intro}</p>
+                                <a href="${course.url}" target="_blank">Enroll Now</a>
+                            `;
+                            outputDiv.appendChild(courseDiv);
+                        });
+                    } else {
+                        outputDiv.innerHTML += `<div class="error">No courses found for your preferences. Please try changing the Course Type or Duration.</div>`; <!-- Updated Message -->
+                    }
                 } else {
                     outputDiv.innerHTML = `<div class="error">${data.error}</div>`;
                 }
