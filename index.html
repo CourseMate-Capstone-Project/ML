@@ -200,7 +200,7 @@
 
                 if (response.ok) {
                     const { predicted_category, recommended_courses } = data;
-                    outputDiv.innerHTML = `<h2>Courses for "${predicted_category}"</h2>`;  <!-- Updated Message -->
+                    outputDiv.innerHTML = `<h2>Predicted Category: "${predicted_category}"</h2>`;  <!-- Updated Message -->
                     
                     if (recommended_courses.length > 0) {
                         recommended_courses.forEach(course => {
@@ -214,7 +214,7 @@
                             outputDiv.appendChild(courseDiv);
                         });
                     } else {
-                        outputDiv.innerHTML += `<div class="error">No courses found for your preferences. Please try changing the Course Type or Duration.</div>`; <!-- Updated Message -->
+                        outputDiv.innerHTML += `<div class="error">No courses found for your preferences. Please try changing the Course Type or Duration.</div>`;
                     }
                 } else {
                     outputDiv.innerHTML = `<div class="error">${data.error}</div>`;
