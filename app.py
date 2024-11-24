@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+from flask_restx import Api, Resource, fields
 import numpy as np
 import pandas as pd
 import tensorflow as tf
@@ -24,6 +25,35 @@ course_data_url = "https://storage.googleapis.com/course-recommendation-data-buc
 # Local paths for the model
 local_model_path = "./models/course_recommendation_model.keras"
 
+# Initialize Flask-RESTX API with Swagger UI
+api = Api(
+    app, 
+    version="1.0", 
+    title="Course Recommendation API", 
+    description="""API untuk memberikan rekomendasi kursus berdasarkan minat, tipe kursus, dan durasi. 
+    Endpoint ini membantu pengguna menemukan kursus yang sesuai dengan preferensi mereka.""",
+    doc="/api/recommend"
+)
+
+# Define the model for Swagger documentation
+recommendation_model = api.model('RecommendationModel', {
+    'interest': fields.String(
+        required=True, 
+        description='Minat kursus yang diinginkan (misalnya: Machine Learning, Data Analysis, dsb.).',
+        example="Machine Learning"
+    ),
+    'course_type': fields.String(
+        required=True, 
+        description='Jenis kursus yang diinginkan (misalnya: Course, Specialization, Professional Certificate, atau Project).',
+        example="Course"
+    ),
+    'duration': fields.String(
+        required=True, 
+        description='Durasi maksimum kursus dalam minggu (misalnya: 4, 8, 12, dst.).',
+        example="8"
+    )
+})
+
 # Download model if not present
 os.makedirs("./models", exist_ok=True)
 
@@ -47,92 +77,104 @@ course_data = pd.read_csv(course_data_url)
 mappings_url = "https://storage.googleapis.com/course-recommendation-data-bucket/mappings/mappings.pkl"
 response = requests.get(mappings_url)
 
-# Pastikan file berhasil diunduh dan dimuat
+# Ensure the mappings are loaded
 if response.status_code == 200:
     mappings = pickle.loads(response.content)
 
-    # Mengakses elemen-elemen dari mappings
-    SUBCATEGORY_MAPPING = mappings.get("SUBCATEGORY_MAPPING")
+    # Extract mappings
+    INTEREST_MAPPING = mappings.get("SUBCATEGORY_MAPPING")
     COURSE_TYPE_MAPPING = mappings.get("COURSE_TYPE_MAPPING")
     CATEGORY_MAPPING = mappings.get("CATEGORY_MAPPING")
     DURATION_MAPPING = mappings.get("DURATION_MAPPING")
 
-    # Pastikan data ada dan valid
-    if SUBCATEGORY_MAPPING and COURSE_TYPE_MAPPING and CATEGORY_MAPPING and DURATION_MAPPING:
-        logging.info("Mappings loaded successfully")
-    else:
+    if not (INTEREST_MAPPING and COURSE_TYPE_MAPPING and CATEGORY_MAPPING and DURATION_MAPPING):
         logging.error("Some mappings are missing or invalid.")
 else:
-    logging.error(f"Failed to retrieve the file. Status code: {response.status_code}")
+    logging.error(f"Failed to retrieve the mappings. Status code: {response.status_code}")
     raise Exception("Failed to load mappings.")
 
-@app.route("/api/recommend", methods=["POST"])
-def recommend_courses():
-    try:
-        # Get JSON input
-        data = request.get_json()
-
-        user_subcategory = data.get('subcategory')
-        user_course_type = data.get('course_type')
-        user_duration = data.get('duration')
-
-        if not user_subcategory or not user_course_type or not user_duration:
-            return jsonify({"error": "All fields must be filled out."}), 400
-
+@api.route('/api/recommend')
+class RecommendCourses(Resource):
+    @api.expect(recommendation_model, validate=False)
+    @api.response(200, 'Rekomendasi berhasil ditemukan.')
+    @api.response(400, 'Input tidak valid atau tidak lengkap.')
+    @api.response(500, 'Terjadi kesalahan pada server.')
+    def post(self):
+        """
+        Endpoint untuk merekomendasikan kursus berdasarkan input pengguna:
+        - Interest: Minat kursus (misalnya: Machine Learning, Data Analysis, dsb.)
+        - Course Type: Jenis kursus (misalnya: Course, Specialization, Professional Certificate, atau Project)
+        - Duration: Durasi maksimum dalam minggu (misalnya: 4, 8, 12, dst.)
+        """
         try:
-            user_duration = int(user_duration)
-        except ValueError:
-            return jsonify({"error": "Duration must be a number."}), 400
+            # Get JSON input
+            data = request.get_json()
 
-        # Map user inputs to encoded values
-        subcategory_encoded = SUBCATEGORY_MAPPING.get(user_subcategory, None)
-        course_type_encoded = COURSE_TYPE_MAPPING.get(user_course_type, None)
-        duration_scaled = DURATION_MAPPING.get(user_duration, None)
+            # Validate input
+            if not data:
+                return {"error": "No input data provided."}, 400
 
-        if subcategory_encoded is None or course_type_encoded is None or duration_scaled is None:
-            return jsonify({"error": "Invalid inputs. Please check your entries."}), 400
+            user_interest = data.get('interest')
+            user_course_type = data.get('course_type')
+            user_duration = data.get('duration')
 
-        # Create feature array for prediction
-        user_features = np.array([[subcategory_encoded, course_type_encoded, duration_scaled]])
-        logging.debug(f"Encoded user features: {user_features}")
+            if not user_interest or not user_course_type or not user_duration:
+                return {"error": "All fields (interest, course_type, duration) must be filled out."}, 400
 
-        # Model prediction
-        predictions = model.predict(user_features)
-        predicted_category_encoded = predictions.argmax(axis=-1)[0]
-        predicted_category = [key for key, value in CATEGORY_MAPPING.items() if value == predicted_category_encoded][0]
+            # Convert duration to integer
+            try:
+                user_duration = int(user_duration)
+            except (ValueError, TypeError):
+                return {"error": "Duration must be a valid number."}, 400
 
-        # Filter and recommend courses based on predicted category and user inputs
-        filtered_courses = course_data[
-            (course_data['Category'] == predicted_category) &
-            (course_data['Course Type'] == user_course_type) & 
-            (course_data['Duration'] <= user_duration) 
-        ]
+            # Map inputs to encoded values
+            interest_encoded = INTEREST_MAPPING.get(user_interest, None)
+            course_type_encoded = COURSE_TYPE_MAPPING.get(user_course_type, None)
+            duration_scaled = DURATION_MAPPING.get(user_duration, None)
 
-        # Filter further based on subcategory if provided
-        if user_subcategory:
-            filtered_courses = filtered_courses[filtered_courses['Sub-Category'] == user_subcategory]
+            if interest_encoded is None or course_type_encoded is None or duration_scaled is None:
+                return {"error": "Invalid inputs. Please check your entries."}, 400
 
-        # Sort and select top 10 courses
-        top_courses = filtered_courses.sort_values(by='Duration').head(10)
+            # Create feature array for prediction
+            user_features = np.array([[interest_encoded, course_type_encoded, duration_scaled]])
+            logging.debug(f"Encoded user features: {user_features}")
 
-        # Prepare recommendations
-        recommended_courses = [
-            {
-                "title": row["Title"],
-                "short_intro": row["Short Intro"][:200] + "..." if len(row["Short Intro"]) > 200 else row["Short Intro"],
-                "url": row["URL"]
-            }
-            for _, row in top_courses.iterrows()
-        ]
+            # Model prediction
+            predictions = model.predict(user_features)
+            predicted_category_encoded = predictions.argmax(axis=-1)[0]
+            predicted_category = [key for key, value in CATEGORY_MAPPING.items() if value == predicted_category_encoded][0]
 
-        return jsonify({
-            "predicted_category": predicted_category,
-            "recommended_courses": recommended_courses
-        }), 200
+            # Filter and recommend courses
+            filtered_courses = course_data[
+                (course_data['Category'] == predicted_category) &
+                (course_data['Course Type'] == user_course_type) & 
+                (course_data['Duration'] <= user_duration)
+            ]
 
-    except Exception as e:
-        logging.error(f"Error processing request: {e}")
-        return jsonify({"error": "An error occurred. Please try again."}), 500
+            if user_interest:
+                filtered_courses = filtered_courses[filtered_courses['Sub-Category'] == user_interest]
+
+            top_courses = filtered_courses.sort_values(by='Duration').head(10)
+
+            recommended_courses = [
+                {
+                    "title": row["Title"],
+                    "short_intro": row["Short Intro"][:200] + "..." if len(row["Short Intro"]) > 200 else row["Short Intro"],
+                    "url": row["URL"]
+                }
+                for _, row in top_courses.iterrows()
+            ]
+
+            return {
+                "predicted_category": predicted_category,
+                "recommended_courses": recommended_courses
+            }, 200
+
+        except Exception as e:
+            logging.error(f"Error processing request: {e}")
+            return {"error": "An error occurred. Please try again."}, 500
+
+api.add_resource(RecommendCourses, '/api/recommend')
 
 if __name__ == "__main__":
     app.run(debug=True, host='0.0.0.0', port=8080)
