@@ -5,6 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="./icons/icon.png" type="image/png">
     <title>CourseMate</title>
+
+    <!-- Include Select2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet" />
+
+    <!-- Include jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- Include Select2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
+
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -28,7 +38,7 @@
         }
 
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
 
         label {
@@ -39,11 +49,12 @@
 
         select, input {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             border: 1px solid #ccc;
             border-radius: 4px;
             font-size: 16px;
             margin-top: 5px;
+            background-color: #fff;
         }
 
         button {
@@ -51,7 +62,7 @@
             background-color: #4CAF50;
             color: #fff;
             border: none;
-            padding: 10px 15px;
+            padding: 12px;
             font-size: 16px;
             border-radius: 4px;
             cursor: pointer;
@@ -103,6 +114,79 @@
         .course a:hover {
             background-color: #0056b3;
         }
+
+        /* Styling Select2 container */
+        .select2-container--default {
+            margin-top: 5px;
+        }
+
+        .select2-container--default .select2-selection--single {
+            height: 48px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            padding: 10px 12px;
+            color: #333;
+            background-color: #fff;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 30px;
+        }
+
+        /* Focused Select2 styling */
+        .select2-container--default .select2-selection--single:focus {
+            border-color: #007BFF;
+            box-shadow: 0 0 4px rgba(0, 123, 255, 0.5);
+        }
+
+        /* Styling for dropdown */
+        .select2-container--default .select2-results__option {
+            padding: 12px;
+            font-size: 16px;
+            background-color: #fff;
+            color: #333;
+            cursor: pointer;
+        }
+
+        .select2-container--default .select2-results__option--highlighted {
+            background-color: #f0f0f0;
+            color: #007BFF;
+        }
+
+        /* Custom Scroll Bar */
+        .select2-container--default .select2-results {
+            max-height: 250px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #888 #f4f4f4;
+        }
+
+        /* Multi-Select Box Styling */
+        .select2-container--default .select2-selection--multiple {
+            height: auto;
+            padding: 8px;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+        }
+
+        .select2-container--default .select2-selection--multiple .select2-selection__clear {
+            background-color: #ff4d4d;
+            color: #fff;
+            border-radius: 50%;
+            font-size: 12px;
+        }
+
+        /* Improved contrast for search input in Select2 */
+        .select2-container--default .select2-search__field {
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 100%;
+            background-color: #f9f9f9;
+        }
+
     </style>
 </head>
 <body>
@@ -160,11 +244,11 @@
                 <label for="duration">Duration (in weeks):</label>
                 <select id="duration" name="duration" required>
                     <option value="" disabled selected>Select duration</option>
-                    <option value="1">1-4</option>
+                    <option value="4">1-4</option>
                     <option value="12">5-12</option>
                     <option value="24">13-24</option>
                     <option value="39">25-40</option>
-                    <option value="60">41-60</option>
+                    <option value="57">41-60</option>
                 </select>
             </div>
             <button type="submit">Get Recommendations</button>
@@ -174,49 +258,57 @@
     </div>
 
     <script>
-        document.getElementById("recommendationForm").addEventListener("submit", async function(event) {
-            event.preventDefault();
+        $(document).ready(function() {
+            // Initialize Select2 for interest, course type, and duration
+            $('#interest, #course_type, #duration').select2({
+                dropdownParent: $('.container'),
+                width: '100%' 
+            });
 
-            const interest = document.getElementById("interest").value;
-            const courseType = document.getElementById("course_type").value;
-            const duration = document.getElementById("duration").value;
+            document.getElementById("recommendationForm").addEventListener("submit", async function(event) {
+                event.preventDefault();
 
-            try {
-                const response = await fetch("https://course-recommendation-api-866939629489.asia-southeast2.run.app/api/recommend", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ interest, course_type: courseType, duration })
-                });
+                const interest = document.getElementById("interest").value;
+                const courseType = document.getElementById("course_type").value;
+                const duration = document.getElementById("duration").value;
 
-                const data = await response.json();
+                try {
+                    const response = await fetch("https://course-recommendation-api-866939629489.asia-southeast2.run.app/api/recommend", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ interest, course_type: courseType, duration })
+                    });
 
-                const outputDiv = document.getElementById("output");
-                outputDiv.innerHTML = "";
+                    const data = await response.json();
 
-                if (response.ok) {
-                    const { predicted_category, recommended_courses } = data;
-                    outputDiv.innerHTML = `<h2>Predicted Category: "${predicted_category}"</h2>`;  <!-- Updated Message -->
-                    
-                    if (recommended_courses.length > 0) {
-                        recommended_courses.forEach(course => {
-                            const courseDiv = document.createElement("div");
-                            courseDiv.className = "course";
-                            courseDiv.innerHTML = `
-                                <h3>${course.title}</h3>
-                                <p>${course.short_intro}</p>
-                                <a href="${course.url}" target="_blank">Enroll Now</a>
-                            `;
-                            outputDiv.appendChild(courseDiv);
-                        });
+                    const outputDiv = document.getElementById("output");
+                    outputDiv.innerHTML = "";
+
+                    if (response.ok) {
+                        const { predicted_category, recommended_courses } = data;
+                        outputDiv.innerHTML = `<h2>Predicted Category: "${predicted_category}"</h2>`;
+                        
+                        if (recommended_courses.length > 0) {
+                            recommended_courses.forEach(course => {
+                                const courseDiv = document.createElement("div");
+                                courseDiv.className = "course";
+                                courseDiv.innerHTML = `
+                                    <h3>${course.title}</h3>
+                                    <p>${course.short_intro}</p>
+                                    <a href="${course.url}" target="_blank">Enroll Now</a>
+                                `;
+                                outputDiv.appendChild(courseDiv);
+                            });
+                        } else {
+                            outputDiv.innerHTML += `<div class="error">No courses found for your preferences. Please try changing the Course Type or Duration.</div>`;
+                        }
                     } else {
-                        outputDiv.innerHTML += `<div class="error">No courses found for your preferences. Please try changing the Course Type or Duration.</div>`;
+                        outputDiv.innerHTML = `<div class="error">${data.error}</div>`;
                     }
-                } else {
-                    outputDiv.innerHTML = `<div class="error">${data.error}</div>`;
+                } catch (error) {
+                    document.getElementById("output").innerHTML = `<div class="error">An error occurred. Please try again later.</div>`;
                 }
-            } catch (error) {
-                document.getElementById("output").innerHTML = `<div class="error">An error occurred. Please try again later.</div>`;
-            }
+            });
         });
     </script>
 </body>
