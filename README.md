@@ -34,7 +34,7 @@ The repository is organized as follows:
 
 ## API Endpoints
 
-### **Base URL**: `/api`
+### **Base URL**: `/`
 
 ### **Recommendations**
 - **Endpoint**: `/api/recommend`  
@@ -86,7 +86,7 @@ The repository is organized as follows:
 ### Installation
 1. Clone this repository:
    ```bash
-   git clone (https://github.com/CourseMate-Capstone-Project/ML)](https://github.com/CourseMate-Capstone-Project/ML)
+   git clone https://github.com/CourseMate-Capstone-Project/ML.git
    cd ML
    ```
 2. Install dependencies:
